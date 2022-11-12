@@ -16,43 +16,45 @@ class Fuzzer:
 		self.iteration = 0
 		self.pid = None
 		self.UUID = "eaf256f8-9e66-4917-a8f6-14f85edacf9f"
-	
-	def check_env(self):
-		cmd = "export LD_LIBRARY_PATH=/opt/qt56/lib"
-		out = subprocess.run(cmd, shell=True)
-		#print(out)
 
-		cmd = "./VBoxManage list vms"
-		args = shlex.split(cmd)
-		out = subprocess.run(args, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)		
+
+	def check_env(self):		
+
+		cmd = "LD_LIBRARY_PATH=/opt/qt56/lib ./VBoxManage list vms"
+		proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)		
 
 		try:
-			rs = out.check_returncode()
-			vmCount = len(out.stdout.split(b'\n'))-1
+			outs, error = proc.communicate()
+			print("returnCode :",  proc.returncode)		
+			print("stdout :", outs.decode("utf-8"))
+			print("stderr :", error.decode("utf-8"))
+			
+			vmCount = len(outs.split(b'\n'))-1
 			if vmCount ==0 :
 				print("vm count : ", vmCount)
 				cmd = "LD_LIBRARY_PATH=/opt/qt56/lib ./VirtualBox"
-				out = subprocess.run(cmd, shell=True)
+				out2 = subprocess.run(cmd, shell=True)
 				return False
-			else:				
-				print(out.stdout)				
+		
 		except Exception as e:
 			print(e)
 			return False		
 		
 		return True
-
 	
 
-	def start_xfreeRDP_2(self):
+	def start_xfreeRDP(self):
+		print("================ xfreeRDP start===============================")		
 		cmd  = "xfreerdp /u:son /p:1234 /v:127.0.0.1"
 		args = shlex.split(cmd)		
 		proc  = subprocess.Popen(args, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 		self.clientRunning = True
 
 		try:
-			out = proc.communicate(timeout=4)
+			outs, error = proc.communicate(timeout=7)
 			print("returnCode :",  proc.returncode)		
+			print("stdout :", outs.decode("utf-8"))
+			print("stderr :", error.decode("utf-8"))
 				
 		except subprocess.TimeoutExpired as e:
 			print("[TimeoutExpired ] :\n", e)
@@ -60,26 +62,22 @@ class Fuzzer:
 			self.clientRunning = False
 		except Exception as e:
 			self.clientRunning = False
+			print("[start_xfreeRDP  Fail ] :\n", e)
 			proc.kill()
 
 
-	def start_vBox_2(self):
-		print("================ start_vBox ===============================")		
-		cmd  = "./VBoxHeadless --startvm " + self.UUID + " --vrde on"
-		args = shlex.split(cmd)
-		proc  = subprocess.Popen(args, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-		print(proc)
-		print("returnCode :",  proc.returncode)		
+	def start_vBox(self):
+		print("================ VBoxHeadless start ===============================")		
+		cmd  = "LD_LIBRARY_PATH=/opt/qt56/lib ./VBoxHeadless --startvm " + self.UUID + " --vrde on"
+		proc  = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 		try:
-			out = proc.communicate()
-			rs = proc.poll()		
-			print("proc.poll() :", rs)
-			print("stdout :", out[0])
-			print("stdout :", out[1])			
+			outs, error = proc.communicate()
 			print("returnCode :",  proc.returncode)
+			print("stdout :", outs.decode("utf-8"))
+			print("stderr :", error.decode("utf-8"))			
 
-			if proc.returncode == 1:
+			if proc.returncode == 1 or proc.returncode == 23:
 				print("vBox is running...")
 				self.vBoxRunning = True
 		except Exception as e:
@@ -88,14 +86,11 @@ class Fuzzer:
 			return
 
 		#self.vBoxRunning = True
-
-
-		
-
+	
 
 	def stop_vBox(self):		
 	
-		print("\n================ stop_vBox ===============================")
+		print("\n================ VBoxHeadless stop ===============================")
 		cmd = "./VBoxManage controlvm " + self.UUID + " savestate"
 		args = shlex.split(cmd)
 		out = subprocess.run(args, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -119,14 +114,14 @@ class Fuzzer:
 	def start(self):
 		while True:
 			if self.vBoxRunning == False:
-				vBox_thread = threading.Thread(target=self.start_vBox_2)
+				vBox_thread = threading.Thread(target=self.start_vBox)
 				vBox_thread.setDaemon(0)
 				vBox_thread.start()
 
 			else: #vBox is running
 				
 				if self.clientRunning == False:
-					self.start_xfreeRDP_2()
+					self.start_xfreeRDP()
 
 				self.iteration += 1
 				
