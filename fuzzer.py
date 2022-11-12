@@ -15,7 +15,7 @@ class Fuzzer:
 		self.clientRunning = False
 		self.iteration = 0
 		self.pid = None
-		self.UUID = "eaf256f8-9e66-4917-a8f6-14f85edacf9f"
+		self.UUID = "7b43c58b-d163-4923-beac-f9947cc8a7ce"
 
 
 	def check_env(self):		
@@ -29,12 +29,12 @@ class Fuzzer:
 			print("stdout :", outs.decode("utf-8"))
 			print("stderr :", error.decode("utf-8"))
 			
-			vmCount = len(outs.split(b'\n'))-1
-			if vmCount ==0 :
-				print("vm count : ", vmCount)
-				cmd = "LD_LIBRARY_PATH=/opt/qt56/lib ./VirtualBox"
-				out2 = subprocess.run(cmd, shell=True)
-				return False
+			#vmCount = len(outs.split(b'\n'))-1
+			#if vmCount ==0 :
+			#	print("vm count : ", vmCount)
+			#	cmd = "LD_LIBRARY_PATH=/opt/qt56/lib ./VirtualBox"
+			#	out2 = subprocess.run(cmd, shell=True)
+			#	return False
 		
 		except Exception as e:
 			print(e)
